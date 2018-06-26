@@ -3,7 +3,6 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "test": "vue-cli-service test",
     "lint": "vue-cli-service lint",
     "deploy": "gh-pages -d dist -m \"chore: Build SPA & Update assets.\" -t",
     "predeploy": "npm run build && npm run build:404",
@@ -13,8 +12,8 @@
     "axios": "^0.18.0",
     "cropperjs": "^1.3.2",
     "crypto-js": "^3.1.9-1",
-    "dexie": "3.0.0-alpha.2",
-    "easemob-websdk": "^1.4.15",
+    "dexie": "^2.0.4",
+    "easemob-websdk": "1.4.15",
     "github-markdown-css": "^2.10.0",
     "headroom.js": "^0.9.4",
     "js-md5": "^0.7.3",
@@ -22,13 +21,11 @@
     "markdown-it": "^8.4.1",
     "markdown-it-plus-image": "^1.0.1",
     "normalize.css": "^8.0.0",
-    "npm": "^5.7.1",
     "photoswipe": "^4.1.2",
     "plus-message-bundle": "^1.0.0",
     "register-service-worker": "^1.0.0",
     "strophe.js": "^1.2.14",
     "swiper": "^4.1.6",
-    "timeago.js": "^3.0.2",
     "underscore": "^1.8.3",
     "vue": "^2.5.16",
     "vue-router": "^3.0.1",
@@ -36,25 +33,24 @@
     "weixin-js-sdk": "^1.3.2"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^3.0.0-beta.6",
-    "@vue/cli-plugin-eslint": "^3.0.0-beta.6",
-    "@vue/cli-plugin-unit-jest": "^3.0.0-beta.6",
-    "@vue/cli-service": "^3.0.0-beta.6",
-    "@vue/eslint-config-prettier": "^3.0.0-beta.6",
-    "@vue/test-utils": "^1.0.0-beta.10",
-    "babel-core": "^7.0.0-0",
-    "babel-jest": "^22.0.4",
+    "@vue/cli-plugin-babel": "^3.0.0-beta.11",
+    "@vue/cli-plugin-eslint": "^3.0.0-beta.11",
+    "@vue/cli-service": "^3.0.0-beta.11",
+    "@vue/eslint-config-prettier": "^3.0.0-beta.11",
     "gh-pages": "^1.1.0",
     "less": "^2.7.3",
     "less-loader": "^4.0.5",
     "postcss-px2rem": "^0.3.0",
     "strip-css-comments": "^3.0.0",
-    "vue-template-compiler": "^2.5.13"
+    "vue-template-compiler": "^2.5.16"
   },
   "browserslist": [
     "> 1%",
     "last 2 versions",
     "not ie <= 8",
     "Safari 6"
+  ],
+  "eslintIgnore": [
+    "dist/*"
   ]
 }

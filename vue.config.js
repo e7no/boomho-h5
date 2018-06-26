@@ -1,7 +1,7 @@
 module.exports = {
   baseUrl: process.env.BASE_URL || "/",
   lintOnSave: true,
-  compiler: false,
+  // compiler: false,
   css: {
     sourceMap: !!eval(process.env.GENERATE_CSS_MAP),
     loaderOptions: {
@@ -14,6 +14,12 @@ module.exports = {
     output: {
       chunkFilename: "js/[name].js"
     }
+  },
+  chainWebpack: config => {
+    config.plugin("html").tap(args => {
+      args[0].chunksSortMode = "none";
+      return args;
+    });
   },
   devServer: {
     open: false,

@@ -9,33 +9,33 @@
       <div class="m-box-model m-flex-grow1 m-aln-center m-flex-base0 m-head-top-title">
         <span>{{title}}资讯排行榜</span>
       </div>
-      <div class="m-box m-flex-grow1 m-aln-center m-flex-base0 m-justify-end">
-
-      </div>
+      <div class="m-box m-flex-grow1 m-aln-center m-flex-base0 m-justify-end"></div>
     </header>
-    <div :class="`${prefixCls}-list`">
-      <div :class="`${prefixCls}-list-item`" v-for="(user, index) in users" :key="user.id">
-        <span :class="{ top: index < 3 }" class="rank">{{ index + 1 }}</span>
-        <div :class="`${prefixCls}-info`" @click="to(`/users/${user.id}`)">
-          <avatar :class="`${prefixCls}-user-avatar`" :user="user"></avatar>
-          <div :class="`${prefixCls}-title`">
-            <h6>{{ user.name }}</h6>
-            <p>阅读量：{{ user.extra.count || 0 }}</p>
-          </div>
-        </div>
-        <template>
-          <svg class="m-style-svg m-svg-big" @click.stop="followUser(user, isFollow(user))">
-            <use xmlns:xlink="http://www.w3.org/1999/xlink" :xlink:href="`#base-${isFollow(user)}`"></use>
-          </svg>
-        </template>
+    <load-more
+      style="padding-top: .9rem"
+      ref="loadmore"
+      :onRefresh="onRefresh"
+      :onLoadMore="onLoadMore">
+      <div :class="`${prefixCls}-list`">
+        <rank-list-item
+          v-for="(user, index) in users"
+          :prefixCls="prefixCls"
+          :key="user.id"
+          :user="user"
+          :index="index">
+          <p>阅读量：{{ user.extra.count || 0 }}</p>
+        </rank-list-item>
       </div>
-    </div>
+    </load-more>
   </div>
 </template>
 
 <script>
-import HeadTop from "../../../components/HeadTop";
-import { followUserByStatus } from "@/api/user.js";
+import HeadTop from "@/components/HeadTop";
+import rankListItem from "../components/rankListItem.vue";
+import { getRankUsers } from "@/api/ranks.js";
+import { limit } from "@/api/api.js";
+
 const prefixCls = "rankItem";
 const api = "/news/ranks";
 const config = {
@@ -57,11 +57,11 @@ const config = {
 };
 
 export default {
-  components: {
-    HeadTop
-  },
   name: "newsList",
-  props: {},
+  components: {
+    HeadTop,
+    rankListItem
+  },
   data() {
     return {
       prefixCls,
@@ -79,12 +79,6 @@ export default {
   },
 
   methods: {
-    isFollow(user) {
-      const { follower = false, following = false } = user;
-      return follower && following
-        ? "eachFollow"
-        : follower ? "follow" : "unFollow";
-    },
     cancel() {
       this.to("/rank/news");
     },
@@ -94,35 +88,23 @@ export default {
         this.$router.push(path);
       }
     },
-    followUser(user, status) {
-      if (this.loading) return;
-      this.loading = true;
-      followUserByStatus({ status, id: user.id })
-        .then(state => {
-          user.follower = state;
-          this.loading = false;
-        })
-        .catch(() => {
-          this.loading = false;
-        });
+    onRefresh() {
+      getRankUsers(api, { type: this.query }).then(data => {
+        this.$store.commit("SAVE_RANK_DATA", { name: this.vuex, data });
+        this.$refs.loadmore.topEnd(false);
+      });
     },
-
-    getUsers() {
-      this.$http
-        .get(
-          api,
-          {
-            params: {
-              type: this.query
-            }
-          },
-          {
-            validateStatus: status => status === 200
-          }
-        )
-        .then(({ data }) => {
-          this.$store.commit("SAVE_RANK_DATA", { name: this.vuex, data });
+    onLoadMore() {
+      getRankUsers(api, {
+        type: this.query,
+        offset: this.users.length || 0
+      }).then((data = []) => {
+        this.$store.commit("SAVE_RANK_DATA", {
+          name: this.vuex,
+          data: [...this.users, ...data]
         });
+        this.$refs.loadmore.bottomEnd(data.length < limit);
+      });
     }
   },
 
@@ -132,7 +114,7 @@ export default {
     this.vuex = config[time].vuex;
     this.query = config[time].query;
     if (this.users.length === 0) {
-      this.getUsers();
+      this.onRefresh();
     }
   }
 };

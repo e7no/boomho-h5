@@ -1,3 +1,6 @@
+// 当前构建版本号
+const version = "v4.0.0-rc.6";
+
 import "./style/tsplus.less";
 import "github-markdown-css";
 import Vue from "vue";
@@ -19,7 +22,7 @@ import components from "./components.js";
 
 import store from "./stores/";
 import router from "./routers/";
-import App from "./App";
+import App from "./App.vue";
 
 import * as WebIM from "@/vendor/easemob";
 
@@ -29,7 +32,7 @@ components.forEach(component => {
   Vue.component(component.name, component);
 });
 
-Vue.config.productionTip = false;
+// Vue.config.productionTip = false;
 
 Vue.prototype.$http = Ajax;
 Vue.prototype.$Modal = Modal;
@@ -48,9 +51,11 @@ for (const k in filters) {
 if (!window.initUrl) {
   window.initUrl = window.location.href.replace(/(\/$)/, "");
 }
-// for (const k in directives) {
-//   Vue.directive(k, directives[k]);
-// }
+
+console.log(
+  `%cWelcome to ThinkSNS Plus! Release ${version} by zhiyicx.`,
+  "color: #00A9E0;"
+);
 
 /* eslint-disable no-new */
 new Vue({

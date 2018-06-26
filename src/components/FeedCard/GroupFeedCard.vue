@@ -10,7 +10,6 @@ export default {
       this.$router.push(`/groups/${this.feed.group.id}/posts/${this.feed.id}`);
     },
     handleLike() {
-      console.log(3242);
       const method = this.liked ? "delete" : "post";
       const url = `/plus-group/group-posts/${this.feed.id}/likes`;
       if (this.fetching) return;
@@ -78,6 +77,14 @@ export default {
         this.feed.liked = val;
       }
     },
+    commentCount: {
+      get() {
+        return this.feed.comments_count || 0;
+      },
+      set(val) {
+        this.feed.comments_count = ~~val;
+      }
+    },
     likeCount: {
       get() {
         return this.feed.likes_count || 0;
@@ -100,11 +107,14 @@ export default {
     },
     has_collect: {
       get() {
-        return this.feed.collected;
+        return this.feed.collected || 0;
       },
       set(val) {
         this.feed.collected = val;
       }
+    },
+    viewCount() {
+      return this.feed.views_count || 0;
     }
   }
 };

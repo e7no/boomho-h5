@@ -6,9 +6,8 @@
     @touchmove.stop='onDrag'
     @mouseup='stopDrag'
     @touchend='stopDrag'
-    @mouseleave='stopDrag'
-    >
-    <header 
+    @mouseleave='stopDrag'>
+    <header
       ref="head"
       class="m-box m-lim-width m-pos-f m-head-top bg-transp"
       :class="{ 'show-title': scrollTop > 1 / 2 * bannerHeight }">
@@ -34,10 +33,20 @@
       <div></div>
     </div>
     <!-- style="overflow-x: hidden; overflow-y:auto; min-height: 100vh" -->
-    <main>    
-      <div ref="banner" class="m-urh-banner" 
-      :style="[userBackGround,paddingTop, {transitionDuration: dragging ? '0s' : '300ms'}]">
+    <main>
+      <div
+        ref="banner"
+        class="m-urh-banner"
+        :style="bannerStyle">
         <div class="m-box-model m-aln-center m-justify-end m-pos-f m-urh-bg-mask">
+          <label class="banner-click-area">
+            <input
+              type="file"
+              ref="imagefile"
+              class="m-rfile"
+              :accept="accept"
+              @change="onBannerChange" />
+          </label>
           <avatar :user="user" size="big" />
           <h3>{{ user.name }}</h3>
           <p>
@@ -52,18 +61,18 @@
         <p>简介：<span>{{ bio }}</span></p>
         <p style="margin-top: 0; margin-left: -0.1rem">
           <i
-          v-if="tag.id"
-          class="m-urh-tag"
-          v-for="tag in tags"
-          :key="`tag-${tag.id}`"
-          >{{ tag.name }}</i>
+            v-if="tag.id"
+            class="m-urh-tag"
+            v-for="tag in tags"
+            :key="`tag-${tag.id}`">
+            {{ tag.name }}
+          </i>
         </p>
       </div>
-      <div 
-      v-clickoutside="hidenFilter"
-      @click="showFilter = !showFilter" 
-      class="m-box m-aln-center m-justify-bet m-urh-filter-box" 
-      >
+      <div
+        v-clickoutside="hidenFilter"
+        @click="showFilter = !showFilter"
+        class="m-box m-aln-center m-justify-bet m-urh-filter-box">
         <span>{{ feedsCount }}条动态</span>
         <div class="m-box m-aln-center m-urh-filter" v-if="isMine">
           <span>{{ feedTypes[screen] }}</span>
@@ -73,11 +82,10 @@
           <transition v-if="showFilter">
             <ul class="m-urh-filter-options">
               <li
-              :key="key"
-              @click="screen = key"
-              v-for="(val, key) of feedTypes"
-              class="m-box m-aln-center m-justify-bet"
-              >
+                :key="key"
+                @click="screen = key"
+                v-for="(val, key) of feedTypes"
+                class="m-box m-aln-center m-justify-bet">
                 <span>{{ val }}</span>
                 <svg class="m-style-svg m-svg-def" v-if="screen === key">
                   <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#base-checked"></use>
@@ -88,13 +96,14 @@
         </div>
       </div>
       <ul class="m-urh-feeds">
-        <li 
-        v-if="feed.id"
-        v-for="feed in feeds"
-        :key='`ush-${userID}-feed${feed.id}`'>
+        <li
+          v-if="feed.id"
+          v-for="feed in feeds"
+          :key='`ush-${userID}-feed${feed.id}`'>
           <feed-card
             :feed="feed"
-            :timeLine="true" />
+            :timeLine="true"
+            @afterDelete="fetchUserInfo()" />
         </li>
       </ul>
       <div class="m-box m-aln-center m-justify-center load-more-box">
@@ -111,10 +120,10 @@
         </svg>
         <span>打赏</span>
       </div>
-      <div 
-      class="m-flex-grow0 m-flex-shrink0 m-box m-aln-center m-justify-center"
-      :class="{ c_59b6d7: relation.status !== 'unFollow' }"
-      @click="followUserByStatus(relation.status)">
+      <div
+        class="m-flex-grow0 m-flex-shrink0 m-box m-aln-center m-justify-center"
+        :class="{ c_59b6d7: relation.status !== 'unFollow' }"
+        @click="followUserByStatus(relation.status)">
         <svg class="m-style-svg m-svg-def">
           <use xmlns:xlink="http://www.w3.org/1999/xlink" :xlink:href="relation.icon"></use>
         </svg>
@@ -130,6 +139,7 @@
     </footer>
   </div>
 </template>
+
 <script>
 import _ from "lodash";
 import bus from "@/bus.js";
@@ -138,7 +148,12 @@ import HeadRoom from "headroom.js";
 import wechatShare from "@/util/wechatShare.js";
 
 import { startSingleChat } from "@/vendor/easemob";
-import { followUserByStatus, getUserInfoById } from "@/api/user.js";
+import { checkImageType } from "@/util/imageCheck.js";
+import {
+  followUserByStatus,
+  getUserInfoById,
+  uploadUserBanner
+} from "@/api/user.js";
 
 export default {
   name: "user-home",
@@ -173,11 +188,25 @@ export default {
       loading: true,
       dY: 0,
       startY: 0,
-      dragging: !1,
-      updating: !1,
+      dragging: false,
+      updating: false,
+
+      accept: {
+        type: [Array, String],
+        default() {
+          return [
+            "image/gif",
+            "image/jpeg",
+            "image/webp",
+            "image/jpg",
+            "image/png",
+            "image/bmp"
+          ];
+        }
+      },
 
       typeFilter: null,
-      showFilter: !1,
+      showFilter: false,
       screen: "all",
 
       feeds: [],
@@ -243,13 +272,16 @@ export default {
     feedsCount() {
       return this.extra.feeds_count || 0;
     },
+    bannerStyle() {
+      return [
+        this.userBackGround,
+        this.paddingTop,
+        { transitionDuration: this.dragging ? "0s" : "300ms" }
+      ];
+    },
     userBackGround() {
       const ubg = this.user.bg;
-      return ubg
-        ? {
-            "background-image": `url("${ubg}")`
-          }
-        : {};
+      return ubg ? { "background-image": `url("${ubg}")` } : {};
     },
     verified() {
       return this.user.verified;
@@ -259,8 +291,8 @@ export default {
     paddingTop() {
       return {
         paddingTop:
-          (this.bannerHeight + 80 * Math.atan(this.dY / 200)) /
-            (this.bannerHeight * 2) *
+          ((this.bannerHeight + 80 * Math.atan(this.dY / 200)) /
+            (this.bannerHeight * 2)) *
             100 +
           "%"
       };
@@ -292,7 +324,9 @@ export default {
         return relations[
           follower && following
             ? "eachFollow"
-            : follower ? "follow" : "unFollow"
+            : follower
+              ? "follow"
+              : "unFollow"
         ];
       },
 
@@ -377,6 +411,27 @@ export default {
       this.fetchUserInfo();
       this.fetchUserFeed();
       this.fetchUserTags();
+    },
+    onBannerChange() {
+      const $input = this.$refs.imagefile;
+      const file = $input.files[0];
+
+      checkImageType([file])
+        .then(() => {
+          uploadUserBanner(file)
+            .then(() => {
+              this.$Message.success("更新个人背景成功！");
+              this.fetchUserInfo();
+            })
+            .catch(({ response: { data } = {} }) => {
+              console.warn(data);
+              this.$Message.error(data.message);
+            });
+        })
+        .catch(() => {
+          this.$Message.info("请上传正确格式的图片文件");
+          $input.value = "";
+        });
     },
     onScroll: _.debounce(function() {
       this.scrollTop = Math.max(
@@ -606,5 +661,15 @@ export default {
     transform: translateY(100%);
     transition: transform 0.3s ease;
   }
+}
+
+.banner-click-area {
+  display: block;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
 }
 </style>

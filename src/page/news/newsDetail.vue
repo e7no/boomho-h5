@@ -31,15 +31,15 @@
           <span>来自 {{ news.from || '原创' }}</span>
         </p>
       </section>
-      <p class="m-art-subject">{{ news.subject }}</p>
+      <p class="m-art-subject" v-if="news.subject">{{ news.subject }}</p>
       <div class="m-art-body" v-html='body'></div>
       <div class="m-box m-aln-center m-justify-bet m-art-foot">
         <div class="m-flex-grow1 m-flex-shrink1 m-box m-aln-center m-art-like-list">
-          <template v-if='likeCount > 0 && audit_status===0'>
+          <template v-if='likeCount > 0 && news.audit_status===0'>
             <ul class="m-box m-flex-grow0 m-flex-shrink0">
-              <li 
+              <li
               :key="id"
-              :style="{ zIndex: 5-index }" 
+              :style="{ zIndex: 5-index }"
               v-for="({user, id}, index) in likes.slice(0, 5)"
               class="m-avatar-box tiny">
                 <img :src="user.avatar">
@@ -63,7 +63,7 @@
       <ul class="m-box m-aln-center m-art-comments-tabs">
         <li>{{ commentCount | formatNum }}条评论</li>
       </ul>
-      <comment-item 
+      <comment-item
         v-if="news.audit_status===0"
         v-for="(comment) in pinnedCom"
         :pinned="true"

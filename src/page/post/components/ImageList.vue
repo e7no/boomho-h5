@@ -5,8 +5,7 @@
         :key='img.src'
         v-for='(img, index) in pics'
         class="m-box-center m-box-center-a image-wrap"
-        :class="[picClass, { error: img.error }, { loading: img.loading }, {edit}]"
-        >
+        :class="[picClass, { error: img.error }, { loading: img.loading }, { edit }]">
         <div class="image-placeholder"></div>
         <img
           :id="`compose-photo-${img.id}`"
@@ -14,10 +13,10 @@
           class="compose-image"
           :class='{loading: img.loading }'
           @load.stop='loadedImg(img)'
-          @error='delPhoto(pics, index)'
-          @click='thumbnails(index)'>
-        <div 
-          v-if="edit && !img.loading"  
+          @error='reUpload(pics, index)'
+          @click='onClickThumb(index)' />
+        <div
+          v-if="edit && !img.loading"
           @click="editImg(img, index)"
           class="m-rpic-edit-wrap m-rpic-edit m-box m-aln-center m-justify-center m-trans">
           <svg v-if="img.amount > 0" viewBox="0 0 1024 1024" class="m-style-svg m-svg-def" fill="#fff">
@@ -46,25 +45,25 @@
             </svg>
           </div>
         </div>
-      </div> 
-      <label 
+      </div>
+      <label
         v-if="showLabel"
-        for="selectphoto" 
+        for="selectphoto"
         class="m-box-center m-box-center-a image-wrap more-image"
         :class='picClass'>
         <div class="image-placeholder"></div>
-        <svg viewBox="0 0 24 24" class='m-style-svg m-flex-grow1 m-svg-big'> 
-          <path d="M21.8,20.8H2.1c-0.5,0-1.1-0.4-1.1-1V6.3c0-0.5,0.4-1.1,1.1-1.1h4.3L8,3.6c0.1-0.3,0.5-0.4,0.8-0.4H15 c0.3,0,0.5,0.1,0.7,0.3l1.9,1.8h4.3c0.5,0,1.1,0.4,1.1,1.1V20C22.9,20.4,22.5,20.8,21.8,20.8L21.8,20.8z M12,6.6 c-3.4,0-6.1,2.7-6.1,6.1s2.7,6.1,6.1,6.1s6.1-2.7,6.1-6.1S15.4,6.6,12,6.6L12,6.6z M12,16.8c-2.3,0-4.1-1.8-4.1-4.1S9.7,8.6,12,8.6 s4.1,1.8,4.1,4.1S14.3,16.8,12,16.8L12,16.8z"></path> 
+        <svg viewBox="0 0 24 24" class='m-style-svg m-flex-grow1 m-svg-big'>
+          <path d="M21.8,20.8H2.1c-0.5,0-1.1-0.4-1.1-1V6.3c0-0.5,0.4-1.1,1.1-1.1h4.3L8,3.6c0.1-0.3,0.5-0.4,0.8-0.4H15 c0.3,0,0.5,0.1,0.7,0.3l1.9,1.8h4.3c0.5,0,1.1,0.4,1.1,1.1V20C22.9,20.4,22.5,20.8,21.8,20.8L21.8,20.8z M12,6.6 c-3.4,0-6.1,2.7-6.1,6.1s2.7,6.1,6.1,6.1s6.1-2.7,6.1-6.1S15.4,6.6,12,6.6L12,6.6z M12,16.8c-2.3,0-4.1-1.8-4.1-4.1S9.7,8.6,12,8.6 s4.1,1.8,4.1,4.1S14.3,16.8,12,16.8L12,16.8z"></path>
         </svg>
       </label>
     </div>
     <input
-      type="file" 
+      type="file"
       ref="imagefile"
       class="m-rfile"
       id="selectphoto"
-      :multiple="multiple" 
-      :accept="acceptType" 
+      :multiple="multiple"
+      :accept="acceptType"
       @change="selectPhoto">
     <image-paid-option ref="imageOption"/>
   </div>
@@ -74,69 +73,8 @@ import bus from "@/bus.js";
 import { mapActions } from "vuex";
 import sendImage from "@/util/SendImage.js";
 import ImagePaidOption from "./ImagePaidOption.vue";
-/**
- * ReadAsArrayBuffer
- * 通过文件头判断文件格式
- * @author jsonleex <jsonlseex@163.com>
- * @param  {[type]} file
- * @return {[type]}
- */
-function readAsArrayBuffer(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onloadend = event => {
-      const uint8 = new Uint8Array(event.target.result).subarray(0, 4);
-      let res = "";
-      for (let i = 0; i < uint8.length; i++) {
-        res += uint8[i].toString(16);
-      }
+import { checkImageType } from "@/util/imageCheck.js";
 
-      let mimeType = "";
-      switch (res) {
-        case "89504e47":
-          mimeType = "png";
-          break;
-        case "47494638":
-          mimeType = "gif";
-          break;
-        case "52494646":
-          mimeType = "webp";
-          break;
-        default:
-          res.indexOf("424d") === 0
-            ? (mimeType = "bmp")
-            : res.indexOf("ffd8ffe") === 0 && (mimeType = "jpeg");
-      }
-      file.mimeType = mimeType;
-      resolve(mimeType);
-    };
-    reader.readAsArrayBuffer(file);
-  });
-}
-/**
- * Check image types
- * @author jsonleex <jsonlseex@163.com>
- * @param  {[type]} files
- * @return {[type]}
- */
-function checkImageType(files) {
-  return new Promise((resolve, reject) => {
-    const exts = ["png", "jpg", "jpeg", "gif", "bmp", "webp"];
-    const blobs = [];
-    for (let index = 0; index < files.length; index++) {
-      const fileName = files[index].name.split(".");
-      if (fileName.length > 1) {
-        const ext = fileName.pop().toLowerCase();
-        exts.indexOf(ext) < 0
-          ? reject(new Error("不支持的文件格式"))
-          : (files[index].mimeType = ext);
-      } else {
-        blobs.push(readAsArrayBuffer(files[index]));
-      }
-    }
-    resolve(files);
-  });
-}
 export default {
   name: "image-list",
   components: {
@@ -252,20 +190,30 @@ export default {
           Object.assign(img, {
             id,
             file: null,
-            loading: !1,
-            error: !1
+            loading: false,
+            error: false
           });
           this.updateComposePhoto(this.pics);
         })
         .catch(() => {
-          img.error = !0;
+          img.error = true;
         });
     },
     delPhoto(pics, index) {
       pics.splice(index, 1);
     },
+    reUpload(pics, index) {
+      pics[index].error = false;
+      this.loadedImg(pics[index]);
+    },
     editImg(img, index) {
       this.$refs.imageOption.show(img, index);
+    },
+    onClickThumb(index) {
+      // 图片上传失败时点击会重新上传，否则打开预览
+      this.pics[index].error
+        ? this.reUpload(this.pics, index)
+        : this.thumbnails(index);
     },
     // 图片预览
     thumbnails(index) {
@@ -313,7 +261,6 @@ export default {
   }
   &.loading:before {
     content: "";
-    display: ;
   }
   &.error {
     &:after {

@@ -9,7 +9,7 @@
         <svg v-if="loading" class="m-style-svg m-svg-def">
           <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#base-loading"></use>
         </svg>
-        <a 
+        <a
           v-else
           class="m-send-btn"
           :class="{ disabled }"
@@ -21,7 +21,7 @@
        @click.self='areaFocus'>
        <content-text
        :rows='8'
-       ref="contentText" 
+       ref="contentText"
        :maxlength="255"
        class='m-reles-txt-wrap'
        :placeholder="`输入要说的话，图文结合更精彩哦`" />
@@ -61,13 +61,10 @@ export default {
   computed: {
     ...mapGetters(["compose", "composePhoto"]),
     disabled() {
-      const imageAllCompleted = this.composePhoto.some(img => {
-        return !!img.id;
-      });
-      return !(
-        this.composePhoto.length > 0 ||
-        (this.compose.length > 0 && imageAllCompleted)
+      const imageAllCompleted = !this.composePhoto.some(
+        img => Object.keys(img).length === 0
       );
+      return !(imageAllCompleted && this.composePhoto.length > 0);
     }
   },
   methods: {
@@ -101,6 +98,12 @@ export default {
     sendmessage() {
       if (!this.disabled) {
         this.loading = true;
+        // 检测是否存在上传失败的图片
+        if (this.composePhoto.some(item => Object.keys(item).length === 0)) {
+          this.$Message.error("存在上传失败的图片，请确认");
+          this.loading = false;
+          return;
+        }
         if (this.pinned) {
           if (!this.composePhoto.some(item => item.amount > 0)) {
             bus.$emit(
@@ -140,6 +143,7 @@ export default {
             this.successCallback();
           })
           .catch(e => {
+            this.$Message.error("发送失败，请稍后再试");
             console.log(e);
             this.loading = false;
           });
